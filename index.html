@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html>
+    <link href="css\style.css" type="text/css" rel="stylesheet">
     <head>
         <title>YouTube Downloader</title>
         <h1>Viki's Youtube Downloader</h1>
     </head>
 <body>
     <div>
-        <form action="http://localhost:9999/download" method="GET" onsubmit="return sendLink()">
+       <!-- <script type="text/javascript" src='send.js'></script> -->
+        <form action="/download" method="GET">
             <div class="youtube-link">
-                <label for="name">Enter the video link: </label>
-                <input type="text" name="ytLink" id="ytLink" placeholder="https://www.youtube.com/watch?v=" required>
+                <!--<label for="name">Enter the video link: </label>-->
+                <input type="text" name="ytLink" id="ytLink" placeholder="Eg: https://www.youtube.com/watch?v=" required>
               </div>
               <div class="youtube-link">
                 <input type="submit" id="downloadButton" value="Download">
@@ -17,6 +19,5 @@
               </div>
         </form>
     </div>
-    <script src='send.js'></script>
 </body>
 </html>

@@ -1,8 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const ytdl = require('ytdl-core');
+var path = require('path');
 const app = express();
 app.use('/static', express.static('./static'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.listen(9999,()=>{
     console.log("Server started at http://localhost:9999/");
