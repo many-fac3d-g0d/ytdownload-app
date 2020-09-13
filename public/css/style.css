@@ -93,6 +93,9 @@ input[type="text"] {
     input[type="text"]{
         width:90%;
     }
+    h1{
+        font-weight: 200;
+    }
   
 }
 
@@ -100,4 +103,14 @@ input[type="text"] {
 input{
     margin-bottom: 5px;
 }
+
+/*#footer{
+    width: 95%;
+    background-color:#4e4e4e;
+    position: absolute;
+    clear: both;
+    color:white;
+    bottom:0;
+    text-align: center;
+  }*/
 
