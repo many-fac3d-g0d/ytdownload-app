@@ -2,6 +2,8 @@
 <html>
     <link href="css\style.css" type="text/css" rel="stylesheet">
     <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>YouTube Downloader</title>
         <h1>Viki's Youtube Downloader</h1>
     </head>
@@ -11,12 +13,31 @@
         <form action="/download" method="GET">
             <div class="youtube-link">
                 <!--<label for="name">Enter the video link: </label>-->
-                <input type="text" name="ytLink" id="ytLink" placeholder="Eg: https://www.youtube.com/watch?v=" required>
-              </div>
-              <div class="youtube-link">
-                <input type="submit" id="downloadButton" value="Download">
-                
-              </div>
+                <div>
+                    <input type="text" name="ytLink" id="ytLink" placeholder="Eg: https://www.youtube.com/watch?v=" required oninvalid="this.setCustomValidity('Please enter a valid youtube link')" oninput="setCustomValidity('')">
+                </div>
+               <!-- <label for="Format">Resolution : </label> -->
+               <div class="container">
+                <label class = "format">
+                    <input type="radio" name="format" id="1080p" value="1080p"/>
+                    <span>1080p</span>
+                </label>
+                <label class = "format">
+                    <input type="radio" name="format" id="720p" value="720p"/>
+                    <span>720p</span>
+                </label>
+                <label class = "format">
+                    <input type="radio" name="format" id="360p" value="360p"/>
+                    <span>360p</span>
+                </label>
+                <label class = "format">
+                    <input type="radio" name="format" id="audioOnly" value="audio">
+                    <span>Audio</span>
+                </label>
+                </div>
+                <div>
+                    <input type="submit" id="downloadButton" value="Download"> 
+                </div>
         </form>
     </div>
 </body>

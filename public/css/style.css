@@ -4,6 +4,8 @@ html {
     background-image: url("northernLights.jpg");
     background-repeat:   no-repeat;
     background-position: center center;
+    background-size: cover;
+    padding: 280px 0px;
   }
 
 h1{
@@ -22,10 +24,40 @@ label{
     font-family: Arial, Helvetica, sans-serif;
 }
 
+
 div{
     font-size: 20px;
     text-align: center;
     font-family: Arial, Helvetica, sans-serif;
+}
+input[type="radio"] {
+    display: none;
+}
+
+.format{
+    display: inline-block;
+    height: 30px;
+    width: 100px;
+    background-size: 130px 50px;
+    background-color:green;
+    position: relative;
+    top:0;
+    color:white;
+    margin-bottom: 5px;
+    border-radius: 10px;
+ }
+span{
+    display: block;
+    height: 30px;
+    width: 100px;
+    border-radius: 10px;
+}
+ .format:hover{
+     background-color:orange;
+ }
+
+ input[type="radio"]:checked+span{
+      background-color:orangered;
 }
 
 #downloadButton{
@@ -33,8 +65,39 @@ div{
     border: none;
     color: white;
     padding: 10px 32px;
+    border-radius: 25px;
+}
+#downloadButton:hover{
+    background-color: orange;
 }
 
 input[type="text"] {
     width: 600px;
 }
+
+/*@media screen and (max-height: 1920px){
+    html{
+        background-image: url("northernLights-mobile1.jpg");
+        padding: 0;
+     }
+    input[type="text"]{
+        width:90%;
+    }
+  
+}*/
+
+@media screen and (max-width: 600px){
+    html{
+        background-image: url("northernLights-mobile.jpg");
+     }
+    input[type="text"]{
+        width:90%;
+    }
+  
+}
+
+
+input{
+    margin-bottom: 5px;
+}
+
