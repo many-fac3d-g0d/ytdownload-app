@@ -4,7 +4,7 @@
   "description": "Youtube downloader",
   "main": "index.js",
   "scripts": {
-    "start":"node .",
+    "start": "node .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Vignesh Nandakumar <nviki001@gmail.com>",
@@ -12,6 +12,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "ffmpeg": "0.0.4",
+    "ffmpeg-static": "^4.2.7",
     "ytdl-core": "^3.2.2"
   }
 }
