@@ -4,6 +4,7 @@ const fs = require('fs');
 const cp = require('child_process');
 const ytdl = require('ytdl-core');
 const ffmpeg = require('ffmpeg-static');
+//const alert = require('alert');
 
 let path = require('path');
 const app = express();
@@ -25,58 +26,67 @@ app.get('/download', async (req, res) => {
     if(typeof qual==='undefined'){
         qual = '720p'; // Default resolution set to 720p, if no value given by user
     }
-    let content_name = await ytdl.getInfo(url);
-   
-    let videoName = content_name.videoDetails.title;
-    videoName = videoName.replace(/[^a-zA-Z ]/g, "_"); // Sanitize video name since it can contain any special char
-    //videoName = videoName.replaceAll('-','_');
-    console.log(`URL : ${url} ${qual} ${content_name.videoDetails.title} ${videoName}`);
-    if(qual==='audio'){
-        res.header("Content-Disposition", `attachment;  filename=${videoName}.mp3`);    
-        ytdl(url, {filter: 'audioonly'}).pipe(res);
-    }
-    else{
-        res.header("Content-Disposition", `attachment;  filename=${videoName}.mkv`);    
-        const video = ytdl(url, {quality:itagValues[qual],filter: 'videoonly'});
-        const audio = ytdl(url, { filter: 'audioonly'});
+    try{
+        let content_name = await ytdl.getInfo(url);
+        
+        let videoName = content_name.videoDetails.title;
+        videoName = videoName.replace(/[^a-zA-Z0-9]/g, "_"); // Sanitize video name since it can contain any special char
+        //videoName = videoName.replaceAll('-','_');
+        console.log(`URL : ${url} ${qual} ${content_name.videoDetails.title} ${videoName}`);
+        if(qual==='audio'){
+            res.header("Content-Disposition", `attachment;  filename=${videoName}.mp3`);    
+            ytdl(url, {filter: 'audioonly'}).pipe(res);
+        }
+        else{
+            res.header("Content-Disposition", `attachment;  filename=${videoName}.mkv`);    
+            const video = ytdl(url, {quality:itagValues[qual],filter: 'videoonly'});
+            const audio = ytdl(url, { filter: 'audioonly', highWaterMark: 1<<25});
 
-        // Start the ffmpeg child process
-        const ffmpegProcess = cp.spawn(ffmpeg, [
-            // Remove ffmpeg's console spamming
-            '-loglevel', '0', '-hide_banner',
-            // Redirect/enable progress messages
-            //'-progress', 'pipe:3',
-            // 3 second audio offset
-            // '-itsoffset', '3.0', 
-            '-i', 'pipe:4',
-            '-i', 'pipe:5',
-            // Rescale the video
-            '-vf', 'scale=1980:1080',
-            // Choose some fancy codes
-            '-c:v', 'libx265', '-x265-params', 'log-level=0',
-            '-c:a', 'flac',
-            // Define output container
-            '-f', 'matroska', 'pipe:6',
-        ], {
-            windowsHide: true,
-            stdio: [
-            /* Standard: stdin, stdout, stderr */
-            'inherit', 'inherit', 'inherit',
-            /* Custom: pipe:3, pipe:4, pipe:5, pipe:6 */
-            'pipe', 'pipe', 'pipe', 'pipe',
-            ],
-        });
+            // Start the ffmpeg child process
+            const ffmpegProcess = cp.spawn(ffmpeg, [
+                // Remove ffmpeg's console spamming
+                '-loglevel', '0', '-hide_banner',
+                // Redirect/enable progress messages
+                //'-progress', 'pipe:3',
+                // 3 second audio offset
+                // '-itsoffset', '3.0', 
+                '-i', 'pipe:4',
+                '-i', 'pipe:5',
+                '-reconnect', '1',
+                '-reconnect_streamed', '1',
+                '-reconnect_delay_max', '4',
+                // Rescale the video
+                '-vf', 'scale=1980:1080',
+                // Choose some fancy codes
+                '-c:v', 'libx265', '-x265-params', 'log-level=0',
+                '-c:a', 'flac',
+                // Define output container
+                '-f', 'matroska', 'pipe:6',
+            ], {
+                windowsHide: true,
+                stdio: [
+                /* Standard: stdin, stdout, stderr */
+                'inherit', 'inherit', 'inherit',
+                /* Custom: pipe:3, pipe:4, pipe:5, pipe:6 */
+                'pipe', 'pipe', 'pipe', 'pipe',
+                ],
+            });
 
-        // Link streams
+            // Link streams
 
-        audio.pipe(ffmpegProcess.stdio[4]);
-        video.pipe(ffmpegProcess.stdio[5]);
-        ffmpegProcess.stdio[6].pipe(res);
+            audio.pipe(ffmpegProcess.stdio[4]);
+            video.pipe(ffmpegProcess.stdio[5]);
+            ffmpegProcess.stdio[6].pipe(res);
 
-        ffmpegProcess.on('close', () => {
-            process.stdout.write('\n\n\n\n');
-            console.log('Downloaded successfully');
-        });
+            ffmpegProcess.on('close', () => {
+                process.stdout.write('\n\n\n\n');
+                console.log('Downloaded successfully');
+            });
 
+        }
+    }catch(error){
+    //alert('The requested video details could not be found, please contact admin :(')
+    console.log('Error in fetching video:',error);
+    res.status(404).send('<p>Could not find the requested video, please contact admin</p><p><a href="http://localhost:9999">Redirect to downloader</a></p>');
     }
 });
