@@ -97,7 +97,7 @@ app.get('/download', async (req, res)=>{
             }
             else{
                 console.log('Error in fetching video format: ',qual);
-                res.status(404).send('<p>The requested video format is not available, for further queries please contact admin</p><p><a href="http://localhost:9999">Redirect to downloader</a></p>');
+                res.status(404).send('<p>The requested video format is not available, for further queries please contact admin</p><p><a href="http://ytdownload-app.herokuapp.com/">Redirect to downloader</a></p>');
             }
             
         }
