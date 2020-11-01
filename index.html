@@ -14,26 +14,34 @@
             <div class="youtube-link">
                 <!--<label for="name">Enter the video link: </label>-->
                 <div>
-                    <input type="text" name="ytLink" id="ytLink" placeholder="Eg: https://www.youtube.com/watch?v=" required oninvalid="this.setCustomValidity('Please enter a valid youtube link')" oninput="setCustomValidity('')">
+                    <input type="text" name="ytLink" id="ytLink" placeholder="Eg: https://www.youtube.com/watch?v=" required oninvalid="this.setCustomValidity('Please enter a valid youtube link')" oninput="setCustomValidity('')"/>
                 </div>
                <!-- <label for="Format">Resolution : </label> -->
                <div class="container">
-                <label class = "format">
-                    <input type="radio" name="format" id="1080p" value="1080p"/>
-                    <span>1080p</span>
-                </label>
-                <label class = "format">
-                    <input type="radio" name="format" id="720p" value="720p"/>
-                    <span>720p</span>
-                </label>
-                <label class = "format">
-                    <input type="radio" name="format" id="360p" value="360p"/>
-                    <span>360p</span>
-                </label>
-                <label class = "format">
-                    <input type="radio" name="format" id="audioOnly" value="audio">
-                    <span>Audio</span>
-                </label>
+                    <label class = "format">
+                        <input type="radio" name="format" id="1080p60" value="1080p60"/>
+                        <span>1080p60</span>
+                    </label>
+                    <label class = "format">
+                        <input type="radio" name="format" id="1080p" value="1080p"/>
+                        <span>1080p</span>
+                    </label>
+                    <label class = "format">
+                        <input type="radio" name="format" id="720p" value="720p"/>
+                        <span>720p</span>
+                    </label>
+                    <label class = "format">
+                        <input type="radio" name="format" id="360p" value="360p"/>
+                        <span>360p</span>
+                    </label>
+                    <label class = "format">
+                        <input type="radio" name="format" id="audioOnly" value="audio">
+                        <span>Audio</span>
+                    </label>
+                </div>
+                <div>
+                    <input type="text" name="startRange" id="startRange" placeholder="00:00:00"/>
+                    <input type="text" name="endRange" id="endRange" placeholder="00:00:00"/>
                 </div>
                 <div>
                     <input type="submit" id="downloadButton" value="Download"> 
