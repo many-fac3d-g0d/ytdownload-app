@@ -12,10 +12,10 @@ const app = express();
 app.use('/static', express.static('./static'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.listen((process.env.PORT || 9999),()=>{
+var server = app.listen((process.env.PORT || 9999),()=>{
     console.log("Server started at http://localhost:9999/");
 });
-
+//server.setTimeout(30000);
 app.get('/', (req, res) => { 
     res.sendFile('index.html',{ root: './' });
 });
@@ -27,24 +27,18 @@ app.get('/download', async (req, res)=>{
             let url = req.query.ytLink;
             let startRange = req.query.startRange;
             let endRange = req.query.endRange;
-            let timeArr1;
-            let timeArr2;
-            let diff;
-            let date;
-            let duration;
-            let startSeconds;
-            let endSeconds;
+            let timeArr1, timeArr2, diff, date, duration, startSeconds, endSeconds;
 
             //console.log("Trim : ",startRange," ",endRange);
             //Calculate time duration only if range specified by user
             if(startRange!=='' || endRange!==''){
                 timeArr1 = startRange.split(':');
                 timeArr2 = endRange.split(':');
-                if(timeArr1.length===3 && timeArr2===3){
+                if(timeArr1.length===3 && timeArr2.length===3){
                     startSeconds = (+timeArr1[0])*60*60 + (+timeArr1[1])*60 + (+timeArr1[2]);
                     endSeconds = (+timeArr2[0])*60*60 + (+timeArr2[1])*60 + (+timeArr2[2]);
                 }
-                else if(timeArr1.length===2 && timeArr2===2){
+                else if(timeArr1.length===2 && timeArr2.length===2){
                     startSeconds = (+timeArr1[0])*60 + (+timeArr1[1]);
                     endSeconds = (+timeArr2[0])*60 + (+timeArr2[1]);
                 }
@@ -118,7 +112,6 @@ app.get('/download', async (req, res)=>{
                     });
 
                 }else{
-                    console.log("Not audio only");
                     if((itagArr.includes(itagValues[qual])) || (itagArr.includes(itagValuesBoth[qual]))){ // Do only if requested format is available in YT
                         console.log("Video has required format");
                         if(itagArr.includes(itagValuesBoth[qual])){ //Both Videoandaudio available use ffmpeg for trimming
@@ -129,10 +122,9 @@ app.get('/download', async (req, res)=>{
                             const ffmpegProcess = cp.spawn(ffmpeg, [
                                 // Remove ffmpeg's console spamming
                                 '-loglevel', '0', '-hide_banner',
-        
-                                '-i', 'pipe:3',    // Splicing based on startRange and duration given by the user
                                 '-ss', startRange,
                                 '-t', duration,
+                                '-i', 'pipe:3',    // Splicing based on startRange and duration given by the user
                                 '-c:v', 'copy',
                                 '-c:a', 'copy',
         
@@ -160,53 +152,94 @@ app.get('/download', async (req, res)=>{
 
                         }else{
                             console.log("Inside trim audio & video separate streams ");
-                            res.header("Content-Disposition", `attachment;  filename=${videoName}.mkv`);    
-                            const video = ytdl(url, {quality:itagValues[qual],filter: 'videoonly'});
-                            const audio = ytdl(url, { filter: 'audioonly', highWaterMark: 1<<25});
-        
+                            /* TODO : trimming 2 streams and combining them for 1080p   */
+                            
+                            res.header("Content-Disposition", `attachment;  filename=${videoName}.mkv`);   
+                            const video = ytdl(url, {quality:itagValues[qual],filter: 'videoonly'})
+                            .on('progress', (_, downloaded, total) => {
+                                tracker.video = { downloaded, total };
+                              });
+                            const audio = ytdl(url, { filter: 'audioonly', highWaterMark: 1<<25})
+                            .on('progress', (_, downloaded, total) => {
+                                tracker.audio = { downloaded, total };
+                              });
+                            const tracker = {
+                                        audio: { downloaded: 0, total: Infinity },
+                                        video: { downloaded: 0, total: Infinity },
+                                        ffmpegaud: { frame: 0, speed: '0x', fps: 0 },
+                                        ffmpegvid: { frame: 0, speed: '0x', fps: 0 }
+                                    }
+                           //const progressbar = setInterval(() => {console.log(tracker)},1000);
                             // Start the ffmpeg child process
-                            const ffmpegProcess = cp.spawn(ffmpeg, [
+                            const ffmpegAudio = cp.spawn(ffmpeg, [
                                 // Remove ffmpeg's console spamming
                                 '-loglevel', '0', '-hide_banner',
-                                // Redirect/enable progress messages
-                                //'-progress', 'pipe:3',
-                                // 3 second audio offset
-                                // '-itsoffset', '3.0', 
+                                // audio offset
+                                //'-itsoffset', '1.0',
                                 '-ss', startRange,
-                                '-i', 'pipe:4',
-                                '-i', 'pipe:5',
                                 '-t', duration,
+                                '-i', 'pipe:3',
+
                                 '-reconnect', '1',
                                 '-reconnect_streamed', '1',
                                 '-reconnect_delay_max', '4',
-                                // Rescale the video
-                                '-vf', 'scale=1980:1080',
-                                // Choose some fancy codes
-                                '-c:v', 'libx265', '-x265-params', 'log-level=0', 'copy',
-                                '-c:a', 'flac', 'copy',
-                                '-async', '1',
                                 // Define output container
                                 '-f', 'matroska', 'pipe:6',
                             ], {
                                 windowsHide: true,
                                 stdio: [
-                                /* Standard: stdin, stdout, stderr */
+                                // Standard: stdin, stdout, stderr
                                 'inherit', 'inherit', 'inherit',
-                                /* Custom: pipe:3, pipe:4, pipe:5, pipe:6 */
+                                // Custom: pipe:3, pipe:4, pipe:5, pipe:6
                                 'pipe', 'pipe', 'pipe', 'pipe',
                                 ],
                             });
-        
-                            // Link streams
-        
-                            audio.pipe(ffmpegProcess.stdio[4]);
-                            video.pipe(ffmpegProcess.stdio[5]);
-                            ffmpegProcess.stdio[6].pipe(res);
-        
-                            ffmpegProcess.on('close', () => {
+
+                            const ffmpegVideo = cp.spawn(ffmpeg, [
+                                // Remove ffmpeg's console spamming
+                                '-loglevel', '0', '-hide_banner',
+
+                                '-i', 'pipe:3',    // Splicing based on startRange and duration given by the user
+                                '-ss', startRange,
+                                '-t', duration,
+                                '-c:v', 'copy',
+                                '-c:a', 'copy', 
+
+                                '-reconnect', '1',
+                                '-reconnect_streamed', '1',
+                                '-reconnect_delay_max', '4',
+                                // Define output container
+                                '-f', 'matroska', 'pipe:6',
+                            ], {
+                                windowsHide: true,
+                                stdio: [
+                                // Standard: stdin, stdout, stderr
+                                'inherit', 'inherit', 'inherit',
+                                // Custom: pipe:3, pipe:4, pipe:5, pipe:6
+                                'pipe', 'pipe', 'pipe', 'pipe',
+                                ],
+                            });
+
+                            
+                            audio.pipe(ffmpegAudio.stdio[3]);
+                            video.pipe(ffmpegVideo.stdio[3]);
+
+                            ffmpegAudio.stdio[6].pipe(fs.createWriteStream('./out.mp3'));
+                            ffmpegVideo.stdio[6].pipe(fs.createWriteStream('./out.mkv'));
+
+                           ffmpegAudio.on('close', ()=>{
+                            process.stdout.write('\n\n\n\n');
+                            console.log('Audio File written succesfully');
+                           });
+                           ffmpegVideo.on('close', ()=>{
+                            process.stdout.write('\n\n\n\n');
+                            console.log('Video File written succesfully');
+                           });
+                           
+                            /*ffmpegProcess.on('close', () => {
                                 process.stdout.write('\n\n\n\n');
                                 console.log('Trimmed audio & video streams separately and downloaded successfully');
-                            });
+                            });*/
                         }
                     }
                 } 
