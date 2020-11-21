@@ -3,8 +3,6 @@ html {
     background-color: black;
     background-image: url("northernLights.jpg");
     background-repeat:   no-repeat;
-    background-position: center center;
-    background-size: cover;
     padding: 280px 0px;
   }
 
@@ -106,8 +104,8 @@ span{
 @media screen and (max-width: 600px){
     html{
         background-image: url("northernLights-mobile.jpg");
-     }
-    input[type="text"]{
+    }
+    #ytLink{
         width:90%;
     }
     h1{

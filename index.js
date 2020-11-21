@@ -12,13 +12,55 @@ const app = express();
 app.use('/static', express.static('./static'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-var server = app.listen((process.env.PORT || 9999),()=>{
+let server = app.listen((process.env.PORT || 9999),()=>{
     console.log("Server started at http://localhost:9999/");
 });
-//server.setTimeout(30000);
+//server.setTimeout(600000);
 app.get('/', (req, res) => { 
     res.sendFile('index.html',{ root: './' });
 });
+
+function validateTimeRange(time){
+    let regexMinSec = /^([0-5][0-9]):([0-5][0-9])$/g;
+    let regexHrMinSec = /^([0-1][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/g;
+
+    if(time.match(regexHrMinSec))
+        return true;
+    else if(time.match(regexMinSec))
+        return true;
+    else
+        return false;
+}
+
+function calculateDuration(startRange, endRange){
+    let timeArr1, timeArr2, diff, date, duration, startSeconds, endSeconds;
+
+    if(startRange!=='' || endRange!==''){
+        timeArr1 = startRange.split(':');
+        timeArr2 = endRange.split(':');
+        if(timeArr1.length===3 && timeArr2.length===3){
+            startSeconds = (+timeArr1[0])*60*60 + (+timeArr1[1])*60 + (+timeArr1[2]);
+            endSeconds = (+timeArr2[0])*60*60 + (+timeArr2[1])*60 + (+timeArr2[2]);
+        }
+        else if(timeArr1.length===2 && timeArr2.length===2){
+            startSeconds = (+timeArr1[0])*60 + (+timeArr1[1]);
+            endSeconds = (+timeArr2[0])*60 + (+timeArr2[1]);
+        }
+        else{
+            console.log('Not a valid time format: ',startRange," - ",endRange);
+                res.status(404).send('<p>The range values specified is invalid, also please check : char in time as in youtube video timeline</p><p><a href="http://ytdownload-app.herokuapp.com/">Redirect to downloader</a></p>');
+        }
+        diff = endSeconds - startSeconds;
+        console.log(" Time Difference :",diff);
+        date = new Date(0);
+        date.setSeconds(diff);
+        duration = date.toISOString().substr(11, 8);
+        console.log("Time Duration : ",duration);
+
+        return duration;
+    }
+    
+}
 
 app.get('/download', async (req, res)=>{
     try{
@@ -27,41 +69,21 @@ app.get('/download', async (req, res)=>{
             let url = req.query.ytLink;
             let startRange = req.query.startRange;
             let endRange = req.query.endRange;
-            let timeArr1, timeArr2, diff, date, duration, startSeconds, endSeconds;
-
-            //console.log("Trim : ",startRange," ",endRange);
-            //Calculate time duration only if range specified by user
-            if(startRange!=='' || endRange!==''){
-                timeArr1 = startRange.split(':');
-                timeArr2 = endRange.split(':');
-                if(timeArr1.length===3 && timeArr2.length===3){
-                    startSeconds = (+timeArr1[0])*60*60 + (+timeArr1[1])*60 + (+timeArr1[2]);
-                    endSeconds = (+timeArr2[0])*60*60 + (+timeArr2[1])*60 + (+timeArr2[2]);
-                }
-                else if(timeArr1.length===2 && timeArr2.length===2){
-                    startSeconds = (+timeArr1[0])*60 + (+timeArr1[1]);
-                    endSeconds = (+timeArr2[0])*60 + (+timeArr2[1]);
-                }
-                else{
-                    console.log('Not a valid time format: ',startRange," - ",endRange);
-                        res.status(404).send('<p>The range values specified is invalid, also please check : char in time as in youtube video timeline</p><p><a href="http://ytdownload-app.herokuapp.com/">Redirect to downloader</a></p>');
-                }
-                diff = endSeconds - startSeconds;
-                console.log(" Time Difference :",diff);
-                date = new Date(0);
-                date.setSeconds(diff);
-                duration = date.toISOString().substr(11, 8);
-                console.log("Time Duration : ",duration);
-
-                console.log("Range : ",startRange," - ",endRange);
-            }
-            
             let qual = req.query.format;
+            let duration = 0, totalDuration;
             if(qual===undefined){
                 qual = '720p'; // Default resolution set to 720p, if no value given by user
             }
+            
+            console.log("Range : ",startRange," - ",endRange);
+            //console.log("Trim : ",startRange," ",endRange);
+            if((validateTimeRange(startRange) && validateTimeRange(endRange)))
+                //Calculate time duration only if range specified by user
+                duration = calculateDuration(startRange,endRange);
+
             let content_name = await ytdl.getInfo(url);
-            console.log("Total duration ",content_name.videoDetails.lengthSeconds);
+            totalDuration = content_name.videoDetails.lengthSeconds
+            console.log("Total duration ", totalDuration);
             let formats = content_name.formats;
             let itagArr = [];
             for(let i=0;i<formats.length;i++){
@@ -72,7 +94,7 @@ app.get('/download', async (req, res)=>{
             videoName = videoName.replace(/[^a-zA-Z0-9]/g, "_"); // Sanitize video name since it can contain any special char
             //videoName = videoName.replaceAll('-','_');
             console.log(`URL : ${url} ${qual} ${content_name.videoDetails.title} ${videoName}`);
-            if(startRange!=='' || endRange!==''){ //When user specified startRange or endRange trim the video using ffmpeg before piping to res
+            if((validateTimeRange(startRange) && validateTimeRange(endRange) && (duration<=totalDuration))){ //When user specified startRange or endRange trim the video using ffmpeg before piping to res
                 console.log(" Inside Range Flow");
                 if(qual==='audio'){
                     console.log("Inside trim audio only");
@@ -152,9 +174,9 @@ app.get('/download', async (req, res)=>{
 
                         }else{
                             console.log("Inside trim audio & video separate streams ");
-                            /* TODO : trimming 2 streams and combining them for 1080p   */
-                            
-                            res.header("Content-Disposition", `attachment;  filename=${videoName}.mkv`);   
+                            // TODO : trimming 2 streams and combining them for 1080p
+                            res.status(404).send('<p>Currently trimming 2 separate streams (Eg: Audio/Video) is not supported, Please try lower resolutions; For further queries please contact admin</p><p><a href="http://ytdownload-app.herokuapp.com/">Redirect to downloader</a></p>');
+                           /* res.header("Content-Disposition", `attachment;  filename=${videoName}.mkv`);   
                             const video = ytdl(url, {quality:itagValues[qual],filter: 'videoonly'})
                             .on('progress', (_, downloaded, total) => {
                                 tracker.video = { downloaded, total };
@@ -170,7 +192,7 @@ app.get('/download', async (req, res)=>{
                                         ffmpegvid: { frame: 0, speed: '0x', fps: 0 }
                                     }
                            //const progressbar = setInterval(() => {console.log(tracker)},1000);
-                            // Start the ffmpeg child process
+
                             const ffmpegAudio = cp.spawn(ffmpeg, [
                                 // Remove ffmpeg's console spamming
                                 '-loglevel', '0', '-hide_banner',
@@ -202,6 +224,7 @@ app.get('/download', async (req, res)=>{
                                 '-i', 'pipe:3',    // Splicing based on startRange and duration given by the user
                                 '-ss', startRange,
                                 '-t', duration,
+                                
                                 '-c:v', 'copy',
                                 '-c:a', 'copy', 
 
@@ -220,31 +243,57 @@ app.get('/download', async (req, res)=>{
                                 ],
                             });
 
-                            
-                            audio.pipe(ffmpegAudio.stdio[3]);
-                            video.pipe(ffmpegVideo.stdio[3]);
-
-                            ffmpegAudio.stdio[6].pipe(fs.createWriteStream('./out.mp3'));
-                            ffmpegVideo.stdio[6].pipe(fs.createWriteStream('./out.mkv'));
-
                            ffmpegAudio.on('close', ()=>{
                             process.stdout.write('\n\n\n\n');
                             console.log('Audio File written succesfully');
                            });
                            ffmpegVideo.on('close', ()=>{
+                            
                             process.stdout.write('\n\n\n\n');
                             console.log('Video File written succesfully');
+                            
                            });
-                           
-                            /*ffmpegProcess.on('close', () => {
+                            const ffmpegProcess = cp.spawn(ffmpeg, [
+                                // Remove ffmpeg's console spamming
+                                '-loglevel', '0', '-hide_banner',
+                                '-ss', startRange,
+                                '-t', duration,
+                                '-i', 'pipe:3',
+                                '-i', 'pipe:4',
+                                '-ss', startRange,
+                                '-t', duration,
+                                '-c:v', 'copy',
+                                '-c:a', 'copy', 
+                            
+                                '-reconnect', '1',
+                                '-reconnect_streamed', '1',
+                                '-reconnect_delay_max', '4',
+                                '-shortest',
+                                // Define output container
+                                '-f', 'matroska', 'pipe:6',
+                            ], {
+                                windowsHide: true,
+                                stdio: [
+                                // Standard: stdin, stdout, stderr
+                                'inherit', 'inherit', 'inherit',
+                                // Custom: pipe:3, pipe:4, pipe:5, pipe:6
+                                'pipe', 'pipe', 'pipe', 'pipe',
+                                ],
+                            });
+                            audio.pipe(ffmpegProcess.stdio[3]);
+                            video.pipe(ffmpegProcess.stdio[4]);
+
+                            ffmpegProcess.stdio[6].pipe(res);
+                            ffmpegProcess.on('close', () => {
                                 process.stdout.write('\n\n\n\n');
                                 console.log('Trimmed audio & video streams separately and downloaded successfully');
                             });*/
+                           
                         }
                     }
                 } 
             }  
-            else{// User has not specified range go with the usual flow ffmpeg is only used during 1080p video audio merging
+            else if( startRange==='' || endRange==='' ){// User has not specified range go with the usual flow ffmpeg is only used during 1080p video audio merging
                 if(qual==='audio'){
                     console.log("Inside no trim audio only");
                     res.header("Content-Disposition", `attachment;  filename=${videoName}.mp3`);    
@@ -310,6 +359,10 @@ app.get('/download', async (req, res)=>{
                     }
                     
                 }
+            }
+            else{
+                console.log("Since not a valid startRange or endRange aborting");
+                res.status(404).send('<p>Please specify a valid time range</p><p><a href="http://ytdownload-app.herokuapp.com/">Redirect to downloader</a></p>');
             }  
     }catch(error){
         //alert('The requested video details could not be found, please contact admin :(')
