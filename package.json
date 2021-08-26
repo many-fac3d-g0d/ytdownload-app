@@ -10,11 +10,8 @@
   "author": "Vignesh Nandakumar <nviki001@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "alert": "^5.0.10",
-    "cors": "^2.8.5",
     "express": "^4.17.1",
-    "ffmpeg": "0.0.4",
-    "ffmpeg-static": "^4.2.7",
-    "ytdl-core": "^4.4.1"
+    "ffmpeg-static": "^4.4.0",
+    "ytdl-core": "^4.9.1"
   }
 }

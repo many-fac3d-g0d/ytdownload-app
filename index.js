@@ -1,13 +1,10 @@
 const express = require('express');
-const cors = require('cors');
-const fs = require('fs');
+//const fs = require('fs');
 const cp = require('child_process');
 const ytdl = require('ytdl-core');
 const ffmpeg = require('ffmpeg-static');
-//const alert = require('alert');
-
 let path = require('path');
-const { time } = require('console');
+
 const app = express();
 app.use('/static', express.static('./static'));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -19,6 +16,12 @@ let server = app.listen((process.env.PORT || 9999),()=>{
 app.get('/', (req, res) => { 
     res.sendFile('index.html',{ root: './' });
 });
+
+
+redirectPage = '<head><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300&display=swap" rel="stylesheet"></head><title>Error - Viki\'s Youtube Downloader</title><img class="myGif" src="https://i.pinimg.com/originals/e8/2d/d7/e82dd7c3a8d4fbaba85e136701770d8d.gif"><style> img { display: block; margin: 0 auto;} p { text-align: center; font-family: \'Open Sans\',serif;} </style>';
+//Adding Easter Eggs 🥚
+
+redirectLink = '<p><a href="https://ytdownload-app.herokuapp.com/">Redirect to downloader</a></p>';
 
 function validateTimeRange(time){
     let regexMinSec = /^([0-5][0-9]):([0-5][0-9])$/g;
@@ -48,7 +51,7 @@ function calculateDuration(startRange, endRange){
         }
         else{
             console.log('Not a valid time format: ',startRange," - ",endRange);
-                res.status(404).send('<p>The range values specified is invalid, also please check : char in time as in youtube video timeline</p><p><a href="http://ytdownload-app.herokuapp.com/">Redirect to downloader</a></p>');
+                res.status(404).send(redirectPage+'<p>The range values specified is invalid, also please check : char in time as in youtube video timeline</p>'+redirectLink);
         }
         diff = endSeconds - startSeconds;
         console.log(" Time Difference :",diff);
@@ -175,7 +178,7 @@ app.get('/download', async (req, res)=>{
                         }else{
                             console.log("Inside trim audio & video separate streams ");
                             // TODO : trimming 2 streams and combining them for 1080p
-                            res.status(404).send('<p>Currently trimming 2 separate streams (Eg: Audio/Video) is not supported, Please try lower resolutions; For further queries please contact admin</p><p><a href="http://ytdownload-app.herokuapp.com/">Redirect to downloader</a></p>');
+                            res.status(404).send(redirectPage+'<p>Currently trimming 2 separate streams (Eg: Audio/Video) is not supported, Please try lower resolutions; For further queries please contact admin</p>'+redirectLink);
                            /* res.header("Content-Disposition", `attachment;  filename=${videoName}.mkv`);   
                             const video = ytdl(url, {quality:itagValues[qual],filter: 'videoonly'})
                             .on('progress', (_, downloaded, total) => {
@@ -355,18 +358,18 @@ app.get('/download', async (req, res)=>{
                     }
                     else{
                         console.log('Error in fetching video format: ',qual);
-                        res.status(404).send('<p>The requested video format is not available, for further queries please contact admin</p><p><a href="http://ytdownload-app.herokuapp.com/">Redirect to downloader</a></p>');
+                        res.status(404).send(redirectPage+'<p>The requested video format is not available, for further queries please contact admin</p>'+redirectLink);
                     }
                     
                 }
             }
             else{
                 console.log("Since not a valid startRange or endRange aborting");
-                res.status(404).send('<p>Please specify a valid time range</p><p><a href="http://ytdownload-app.herokuapp.com/">Redirect to downloader</a></p>');
+                res.status(404).send(redirectPage+'<p>Please specify a valid time range</p>'+redirectLink);
             }  
     }catch(error){
         //alert('The requested video details could not be found, please contact admin :(')
         console.log('Error in fetching video:',error);
-        res.status(404).send('<p>Could not find the requested video, please contact admin</p><p><a href="http://ytdownload-app.herokuapp.com/">Redirect to downloader</a></p>');
+        res.status(404).send(redirectPage+'<p>Could not find the requested video, please contact admin</p>'+redirectLink);
     }
 });
