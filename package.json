@@ -12,6 +12,6 @@
   "dependencies": {
     "express": "^4.17.1",
     "ffmpeg-static": "^4.4.0",
-    "ytdl-core": "^4.9.1"
+    "ytdl-core": "latest"
   }
 }
