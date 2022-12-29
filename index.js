@@ -6,14 +6,16 @@ const ffmpeg = require('ffmpeg-static');
 let path = require('path');
 
 const app = express();
+let hostname = "localhost:9999";
 app.use('/static', express.static('./static'));
 app.use(express.static(path.join(__dirname, 'public')));
 
 let server = app.listen((process.env.PORT || 9999),()=>{
-    console.log("Server started at http://localhost:9999/");
+    console.log(`Server started at http://${hostname}/`);
 });
 //server.setTimeout(600000);
 app.get('/', (req, res) => { 
+    hostname = req.headers.host;
     res.sendFile('index.html',{ root: './' });
 });
 
@@ -21,7 +23,7 @@ app.get('/', (req, res) => {
 redirectPage = '<head><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300&display=swap" rel="stylesheet"></head><title>Error - Viki\'s Youtube Downloader</title><img class="myGif" src="https://i.pinimg.com/originals/e8/2d/d7/e82dd7c3a8d4fbaba85e136701770d8d.gif"><style> img { display: block; margin: 0 auto;} p { text-align: center; font-family: \'Open Sans\',serif;} </style>';
 //Adding Easter Eggs 🥚
 
-redirectLink = '<p><a href="https://ytdownload-app.herokuapp.com/">Redirect to downloader</a></p>';
+redirectLink = `<p><a href="https://${hostname}/">Redirect to downloader</a></p>`;
 
 function validateTimeRange(time){
     let regexMinSec = /^([0-5][0-9]):([0-5][0-9])$/g;
